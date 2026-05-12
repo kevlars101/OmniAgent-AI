@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from app.schemas.documents import DocumentSearchRequest
@@ -26,4 +27,7 @@ class DocumentSearchTool:
             document_ids=request.document_ids,
         )
         return [hit.model_dump(mode="json") for hit in hits]
+
+    async def ainvoke(self, kwargs: dict) -> Any:
+        return await self.search(**kwargs)
 

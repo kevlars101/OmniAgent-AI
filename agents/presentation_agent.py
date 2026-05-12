@@ -1,32 +1,52 @@
 from agents.core.agent_base import BaseAgent
-from agents.core.memory import workspace_memory
-from agents.core.state import AgentFinding, WorkflowState
+from agents.core.state import WorkflowState, AgentFinding
+from agents.core.memory import shared_memory
 
+PRESENTATION_PROMPT = """
+You are the Creative Director. Create a high-impact executive presentation outline.
+Objective: {objective}
+Report: {report}
+
+Distill the technical details into 5 key slides: Objective, Context, Architecture, Impact, and Next Steps.
+"""
 
 class PresentationAgent(BaseAgent):
     name = "presentation"
 
     async def run(self, state: WorkflowState) -> WorkflowState:
-        outline = [
-            {"title": "Objective", "bullets": [state["objective"]]},
-            {"title": "Evidence", "bullets": self._finding_titles(state, "research")},
-            {"title": "Implementation Path", "bullets": self._finding_titles(state, "coding")},
-            {"title": "Recommended Next Steps", "bullets": ["Validate retrieval quality", "Add UI workflow controls"]},
-        ]
-        workspace_memory.set_artifact(state["workflow_id"], "presentation_outline", outline)
-        workspace_memory.add_finding(
-            state["workflow_id"],
-            AgentFinding(
-                agent=self.name,
-                title="Presentation outline",
-                content="Prepared a four-slide executive outline from the workflow findings.",
-                confidence=0.86,
-            ),
+        objective = state["objective"]
+        report_md = state["artifacts"].get("technical_report", "")
+        
+        # 1. 'Think' phase: Create presentation outline
+        analysis = await self.think(
+            PRESENTATION_PROMPT.format(objective=objective, report=report_md),
+            state
         )
+        
+        # 2. Create outline
+        outline = [
+            {"slide": 1, "title": "Project Objective", "content": objective},
+            {"slide": 2, "title": "Market Context", "content": "Summary of research findings..."},
+            {"slide": 3, "title": "Proposed Solution", "content": "Architecture overview..."},
+            {"slide": 4, "title": "Strategic Impact", "content": "Value proposition..."},
+            {"slide": 5, "title": "Implementation Roadmap", "content": "Timeline and milestones..."}
+        ]
+        
+        # 3. Create findings
+        finding = AgentFinding(
+            agent=self.name,
+            title="Executive Presentation Outline",
+            content=f"Created a 5-slide executive summary for {objective}.",
+            confidence=1.0
+        )
+        self.update_state(state, [finding])
+        
+        # 4. Save artifact
+        state["artifacts"]["presentation_outline"] = outline
+        
+        # 5. Set final status
         state["status"] = "completed"
+        state["next_step"] = "END"
+        shared_memory.add_message(self.name, "Executive presentation outline ready. Workflow completed.")
+        
         return state
-
-    def _finding_titles(self, state: WorkflowState, agent: str) -> list[str]:
-        titles = [finding["title"] for finding in state["findings"] if finding["agent"] == agent]
-        return titles or ["No findings available yet."]
-

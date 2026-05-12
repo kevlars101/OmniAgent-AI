@@ -1,31 +1,51 @@
 from agents.core.agent_base import BaseAgent
-from agents.core.memory import workspace_memory
-from agents.core.state import AgentFinding, WorkflowState
+from agents.core.state import WorkflowState, AgentFinding
+from agents.core.memory import shared_memory, shared_memory
 from agents.tools.code_executor import CodeAnalysisTool
 
+CODING_PROMPT = """
+You are the Lead Systems Engineer. Based on the research provided, design the technical architecture.
+Objective: {objective}
+Research: {research}
+
+Specify the technology stack, module boundaries, and data flow.
+"""
 
 class CodingAgent(BaseAgent):
     name = "coding"
 
-    def __init__(self, code_tool: CodeAnalysisTool | None = None) -> None:
-        self.code_tool = code_tool or CodeAnalysisTool()
+    def __init__(self, model=None):
+        super().__init__(model, tools=[CodeAnalysisTool()])
 
     async def run(self, state: WorkflowState) -> WorkflowState:
-        research = next(
-            (finding for finding in reversed(state["findings"]) if finding["agent"] == "research"),
-            None,
+        objective = state["objective"]
+        research_findings = [f["content"] for f in state["findings"] if f["agent"] == "research"]
+        
+        # 1. Use Tool: Create implementation plan
+        tool = CodeAnalysisTool()
+        plan = tool.create_implementation_plan(objective, "\n".join(research_findings))
+        
+        # 2. 'Think' phase: Refine architecture
+        analysis = await self.think(
+            CODING_PROMPT.format(objective=objective, research=str(research_findings)),
+            state
         )
-        research_summary = research["content"] if research else ""
-        plan = self.code_tool.create_implementation_plan(state["objective"], research_summary)
-        workspace_memory.set_artifact(state["workflow_id"], "implementation_plan", plan)
-        workspace_memory.add_finding(
-            state["workflow_id"],
-            AgentFinding(
-                agent=self.name,
-                title="Implementation guidance",
-                content="\n".join(f"- {step}" for step in plan["steps"]),
-                confidence=0.82,
-            ),
+        
+        # 3. Create findings
+        finding = AgentFinding(
+            agent=self.name,
+            title="Technical Architecture Design",
+            content=f"Proposed stack: {', '.join(plan['recommended_stack'])}. Defined {len(plan['steps'])} implementation steps.",
+            confidence=0.95,
+            metadata={"stack": plan['recommended_stack']}
         )
+        self.update_state(state, [finding])
+        
+        # 4. Save artifact
+        state["artifacts"]["implementation_plan"] = plan
+        
+        # 5. Set next step
+        state["next_step"] = "report"
+        shared_memory.add_message(self.name, "Architecture design complete. Implementation plan stored in artifacts.")
+        
         return state
-

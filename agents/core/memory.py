@@ -1,40 +1,39 @@
-from collections import defaultdict
+from typing import Any
 from uuid import UUID
-
 from agents.core.state import AgentFinding, AgentMessage, AgentName, WorkflowState
 
+class SharedMemory:
+    """
+    Handles shared memory across agents.
+    In a real production app, this would interface with Redis or a Vector DB.
+    """
+    def __init__(self):
+        self.context_window: list[AgentMessage] = []
+        self.knowledge_base: list[AgentFinding] = []
+        self.artifacts: dict[str, Any] = {}
 
-class WorkspaceMemory:
-    def __init__(self) -> None:
-        self._findings: dict[UUID, list[AgentFinding]] = defaultdict(list)
-        self._messages: dict[UUID, list[AgentMessage]] = defaultdict(list)
-        self._artifacts: dict[UUID, dict] = defaultdict(dict)
+    def add_message(self, agent: AgentName, content: str, metadata: dict[str, Any] | None = None):
+        msg = AgentMessage(agent=agent, content=content, metadata=metadata or {})
+        self.context_window.append(msg)
 
-    def hydrate(self, state: WorkflowState) -> WorkflowState:
-        workflow_id = state["workflow_id"]
-        state["findings"] = [finding.model_dump() for finding in self._findings[workflow_id]]
-        state["messages"] = [message.model_dump() for message in self._messages[workflow_id]]
-        state["artifacts"] = dict(self._artifacts[workflow_id])
-        return state
+    def add_finding(self, finding: AgentFinding):
+        self.knowledge_base.append(finding)
 
-    def add_finding(self, workflow_id: UUID, finding: AgentFinding) -> None:
-        self._findings[workflow_id].append(finding)
+    def set_artifact(self, key: str, value: Any):
+        self.artifacts[key] = value
 
-    def add_message(self, workflow_id: UUID, agent: AgentName, content: str, metadata: dict | None = None) -> None:
-        self._messages[workflow_id].append(
-            AgentMessage(agent=agent, content=content, metadata=metadata or {})
-        )
+    def get_context(self) -> str:
+        """Returns a string representation of the shared context."""
+        context = "--- SHARED CONTEXT ---\n"
+        for msg in self.context_window[-10:]: # Last 10 messages
+            context += f"[{msg.agent}]: {msg.content}\n"
+        
+        context += "\n--- KEY FINDINGS ---\n"
+        for finding in self.knowledge_base:
+            context += f"- {finding.title}: {finding.content}\n"
+        
+        return context
 
-    def set_artifact(self, workflow_id: UUID, key: str, value: dict | str | list) -> None:
-        self._artifacts[workflow_id][key] = value
-
-    def snapshot(self, workflow_id: UUID) -> dict:
-        return {
-            "findings": [finding.model_dump() for finding in self._findings[workflow_id]],
-            "messages": [message.model_dump() for message in self._messages[workflow_id]],
-            "artifacts": self._artifacts[workflow_id],
-        }
-
-
-workspace_memory = WorkspaceMemory()
-
+# Singleton for demonstration, though in production we'd use dependency injection
+# and per-workflow instances.
+shared_memory = SharedMemory()

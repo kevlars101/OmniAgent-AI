@@ -1,3 +1,5 @@
+from typing import Any
+
 class CodeAnalysisTool:
     name = "code_analysis"
 
@@ -13,4 +15,8 @@ class CodeAnalysisTool:
             ],
             "research_context": research_summary,
         }
+
+    async def ainvoke(self, kwargs: dict) -> Any:
+        # Run sync method in thread if needed, or just call if simple
+        return self.create_implementation_plan(**kwargs)
 
