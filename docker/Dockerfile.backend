@@ -5,15 +5,29 @@ WORKDIR /app
 # Install system dependencies required for some Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Optimize layer caching: Copy requirements first
+COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the rest of the application
 COPY . .
+
+# Set PYTHONPATH so that absolute imports work (e.g., from app.core...)
+ENV PYTHONPATH=/app/backend:/app
+
+# Add a healthcheck for Docker reliability
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/ || exit 1
+
+# Add proper WORKDIR usage for uvicorn
+WORKDIR /app/backend
 
 # Expose FastAPI port
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Start backend using uvicorn app.main:app
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
