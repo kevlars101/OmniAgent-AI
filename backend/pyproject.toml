@@ -1,0 +1,34 @@
+[project]
+name = "omniagent-backend"
+version = "0.1.0"
+description = "FastAPI backend for OmniAgent AI"
+requires-python = ">=3.11"
+dependencies = [
+  "asyncpg>=0.29.0",
+  "chromadb>=0.5.20",
+  "fastapi[standard]>=0.115.0",
+  "google-generativeai>=0.8.3",
+  "langgraph>=0.2.60",
+  "openai>=1.58.0",
+  "pydantic-settings>=2.7.0",
+  "pypdf>=5.1.0",
+  "python-docx>=1.1.2",
+  "python-multipart>=0.0.20",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "uvicorn[standard]>=0.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3.4",
+  "pytest-asyncio>=0.25.0",
+  "ruff>=0.8.4",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
