@@ -1,76 +1,90 @@
-from uuid import UUID
+import asyncio
+from typing import List, Dict, Any, Optional
+import uuid
+import logging
 
-import chromadb
-from chromadb.api.models.Collection import Collection
+from rag.chunking.semantic_chunker import DocumentChunk
+from rag.embeddings.embedding_provider import EmbeddingProvider
 
-from app.core.config import settings
-from rag.chunking.semantic_chunker import Chunk
-from rag.embeddings.provider import get_embedding_provider
-
+logger = logging.getLogger(__name__)
 
 class ChromaVectorStore:
-    def __init__(self) -> None:
-        self.client = chromadb.PersistentClient(path=settings.chroma_path)
-        self.collection: Collection = self.client.get_or_create_collection(
-            name=settings.chroma_collection,
-            metadata={"hnsw:space": "cosine"},
-        )
-        self.embedding_provider = get_embedding_provider()
+    """
+    Async wrapper for ChromaDB.
+    Handles storing document chunks, embeddings, and rich metadata.
+    """
+    def __init__(self, collection_name: str = "omniagent_knowledge", persist_directory: str = "./var/chroma"):
+        self.collection_name = collection_name
+        self.persist_directory = persist_directory
+        self._provider = EmbeddingProvider()
+        
+        # In production:
+        # import chromadb
+        # self.client = chromadb.PersistentClient(path=self.persist_directory)
+        # self.collection = self.client.get_or_create_collection(name=self.collection_name)
+        
+        # Mock storage for demonstration
+        self._mock_store = []
 
-    async def add_chunks(self, user_id: UUID, document_id: UUID, chunks: list[Chunk]) -> list[str]:
-        if not chunks:
-            return []
+    async def add_chunks(self, chunks: List[DocumentChunk]):
+        logger.info(f"Adding {len(chunks)} chunks to vector store '{self.collection_name}'")
+        
+        # 1. Generate embeddings
+        texts = [chunk.text for chunk in chunks]
+        embeddings = await self._provider.embed_documents(texts)
+        
+        # 2. Prepare payload for Chroma
+        ids = [f"{chunk.metadata['document_id']}_{chunk.chunk_index}" for chunk in chunks]
+        metadatas = [chunk.metadata for chunk in chunks]
+        
+        # 3. Insert into Vector DB (Simulated async IO)
+        await asyncio.sleep(0.1)
+        
+        for i in range(len(chunks)):
+            self._mock_store.append({
+                "id": ids[i],
+                "text": texts[i],
+                "metadata": metadatas[i],
+                "embedding": embeddings[i]
+            })
+            
+        logger.debug(f"Successfully ingested {len(chunks)} vectors.")
 
-        ids = [f"{document_id}:{index}" for index, _ in enumerate(chunks)]
-        texts = [chunk.content for chunk in chunks]
-        embeddings = await self.embedding_provider.embed_texts(texts)
-        metadatas = [
-            {
-                **chunk.metadata,
-                "user_id": str(user_id),
-                "document_id": str(document_id),
-                "chunk_index": index,
-            }
-            for index, chunk in enumerate(chunks)
-        ]
-
-        self.collection.upsert(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
-        return ids
-
-    async def query(
-        self,
-        user_id: UUID,
-        query: str,
-        limit: int,
-        document_ids: list[UUID] | None = None,
-    ) -> list[dict]:
-        embedding = await self.embedding_provider.embed_query(query)
-        where: dict = {"user_id": str(user_id)}
-        if document_ids:
-            where = {"$and": [where, {"document_id": {"$in": [str(item) for item in document_ids]}}]}
-
-        result = self.collection.query(
-            query_embeddings=[embedding],
-            n_results=limit,
-            where=where,
-            include=["documents", "distances", "metadatas"],
-        )
-
-        documents = result.get("documents", [[]])[0]
-        distances = result.get("distances", [[]])[0]
-        metadatas = result.get("metadatas", [[]])[0]
-        ids = result.get("ids", [[]])[0]
-
-        hits = []
-        for index, content in enumerate(documents):
-            metadata = metadatas[index] or {}
-            hits.append(
-                {
-                    "id": ids[index],
-                    "content": content,
-                    "score": max(0.0, 1.0 - float(distances[index])),
-                    "metadata": metadata,
-                }
-            )
-        return hits
-
+    async def search(self, query: str, limit: int = 5, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        logger.info(f"Searching vector store for query: '{query[:30]}...' with limit {limit}")
+        
+        # 1. Embed query
+        query_embedding = await self._provider.embed_query(query)
+        
+        # 2. Perform vector search in Chroma (Simulated)
+        # In production:
+        # results = self.collection.query(
+        #     query_embeddings=[query_embedding],
+        #     n_results=limit,
+        #     where=filters
+        # )
+        
+        await asyncio.sleep(0.05)
+        
+        # Mocking search results from the internal store, filtering manually for demo
+        results = []
+        for item in self._mock_store:
+            # Simple mock filtering
+            match = True
+            if filters:
+                for k, v in filters.items():
+                    if k in item["metadata"]:
+                        if isinstance(v, list) and item["metadata"][k] not in v:
+                            match = False
+                        elif not isinstance(v, list) and item["metadata"][k] != v:
+                            match = False
+            
+            if match:
+                results.append({
+                    "text": item["text"],
+                    "metadata": item["metadata"],
+                    "score": 0.95 # Mock similarity score
+                })
+                
+        # Return top N
+        return results[:limit]

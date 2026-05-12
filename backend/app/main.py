@@ -1,46 +1,45 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
-from app.api.v1.router import api_router
 from app.core.config import settings
-from app.core.errors import register_error_handlers
-from app.core.logging import configure_logging, get_logger
-from app.db.session import dispose_engine
-
-logger = get_logger(__name__)
-
+from app.core.logging import setup_logging
+from app.core.exceptions import APIException, api_exception_handler, unhandled_exception_handler
+from app.api.router import api_router
+from app.db.database import engine, Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    configure_logging()
-    logger.info("Starting OmniAgent AI backend", extra={"environment": settings.environment})
+    # Setup structured logging
+    setup_logging()
+    
+    # Initialize database tables (In prod, use Alembic migrations instead)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
     yield
-    await dispose_engine()
-    logger.info("Stopped OmniAgent AI backend")
+    
+    # Teardown logic
+    await engine.dispose()
 
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
+)
 
-def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.app_name,
-        version=settings.app_version,
-        description="FastAPI backend for OmniAgent AI multi-agent workflows and RAG.",
-        lifespan=lifespan,
-    )
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Exception Handlers
+app.add_exception_handler(APIException, api_exception_handler)
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
-    register_error_handlers(app)
-    app.include_router(api_router, prefix=settings.api_v1_prefix)
-    return app
-
-
-app = create_app()
-
+# Routers
+app.include_router(api_router, prefix=settings.API_V1_STR)

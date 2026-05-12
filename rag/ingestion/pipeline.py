@@ -1,40 +1,65 @@
-from pathlib import Path
+import os
+from typing import Dict, Any
+from uuid import UUID
+import logging
 
-from pydantic import BaseModel, Field
-
-from app.core.config import settings
-from rag.chunking.semantic_chunker import Chunk, SemanticChunker
+from rag.ingestion.pdf_loader import PDFLoader
 from rag.ingestion.docx_loader import DocxLoader
-from rag.ingestion.pdf_loader import PdfLoader
+from rag.chunking.semantic_chunker import SemanticChunker
+from rag.store.chroma import ChromaVectorStore
 
+logger = logging.getLogger(__name__)
 
-class IngestionResult(BaseModel):
-    chunks: list[Chunk]
-    token_count: int
-    metadata: dict = Field(default_factory=dict)
+class RAGPipeline:
+    """
+    Orchestrates the entire ingestion flow: Loading -> Chunking -> Embedding -> Storage.
+    """
+    def __init__(self, vector_store: ChromaVectorStore | None = None):
+        self.pdf_loader = PDFLoader()
+        self.docx_loader = DocxLoader()
+        self.chunker = SemanticChunker(chunk_size=800, chunk_overlap=150)
+        self.vector_store = vector_store or ChromaVectorStore()
 
+    async def ingest_document(self, file_path: str, user_id: UUID, document_id: UUID) -> Dict[str, Any]:
+        """
+        Main entry point for processing a new document.
+        Designed to be run as an async background task.
+        """
+        logger.info(f"Starting RAG ingestion pipeline for {file_path}")
+        
+        # 1. Determine file type and load
+        _, ext = os.path.splitext(file_path.lower())
+        
+        if ext == '.pdf':
+            doc_extract = await self.pdf_loader.load_async(file_path, str(user_id), str(document_id))
+        elif ext == '.docx':
+            doc_extract = await self.docx_loader.load_async(file_path, str(user_id), str(document_id))
+        elif ext == '.txt':
+            # Simple text fallback
+            with open(file_path, 'r', encoding='utf-8') as f:
+                text = f.read()
+            doc_extract = type('obj', (object,), {'text': text, 'metadata': {
+                'source': file_path, 'user_id': str(user_id), 'document_id': str(document_id), 'file_type': 'txt'
+            }})()
+        else:
+            raise ValueError(f"Unsupported file type: {ext}")
+            
+        logger.debug(f"Extraction complete. Extracted {len(doc_extract.text)} characters.")
+        
+        # 2. Semantic Chunking
+        chunks = self.chunker.split_text(doc_extract.text, base_metadata=doc_extract.metadata)
+        logger.debug(f"Document split into {len(chunks)} semantic chunks.")
+        
+        # 3. Embedding and Storage
+        await self.vector_store.add_chunks(chunks)
+        
+        logger.info(f"Successfully ingested {document_id} into RAG storage.")
+        
+        return {
+            "status": "success",
+            "document_id": str(document_id),
+            "chunks_created": len(chunks)
+        }
 
-class IngestionPipeline:
-    def __init__(self, chunker: SemanticChunker | None = None):
-        self.chunker = chunker or SemanticChunker(
-            chunk_size=settings.chunk_size,
-            chunk_overlap=settings.chunk_overlap,
-        )
-
-    async def ingest_file(self, path: Path) -> IngestionResult:
-        text, metadata = await self._load_text(path)
-        chunks = self.chunker.chunk(text, source=str(path), base_metadata=metadata)
-        return IngestionResult(
-            chunks=chunks,
-            token_count=sum(chunk.token_count for chunk in chunks),
-            metadata=metadata,
-        )
-
-    async def _load_text(self, path: Path) -> tuple[str, dict]:
-        suffix = path.suffix.lower()
-        if suffix == ".pdf":
-            return await PdfLoader().load(path)
-        if suffix == ".docx":
-            return await DocxLoader().load(path)
-        raise ValueError(f"Unsupported document type: {suffix}")
-
+# Global singleton for FastAPI injection
+rag_pipeline = RAGPipeline()
