@@ -12,6 +12,7 @@ from agents.research_agent import ResearchAgent
 from agents.coding_agent import CodingAgent
 from agents.report_agent import ReportAgent
 from agents.presentation_agent import PresentationAgent
+from agents.browser_agent import BrowserAgent
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,13 @@ class OmniAgentGraph:
         
         if stream:
             return self.graph.astream(initial_state)
+        
+        final_state = await self.graph.ainvoke(initial_state)
+        return final_state
+
+# Main instance
+omniagent_graph = OmniAgentGraph()
+tial_state)
         
         final_state = await self.graph.ainvoke(initial_state)
         return final_state
