@@ -35,7 +35,7 @@ def router(state: WorkflowState) -> Union[List[str], str]:
         
     # 5. Handle single agent routing
     # Validate that the agent name is valid
-    valid_agents = ["planning", "supervisor", "research", "coding", "report", "presentation", "browser"]
+    valid_agents = ["planning", "supervisor", "research", "coding", "report", "presentation", "browser", "critic"]
     if next_step in valid_agents:
         logger.info(f"Routing to next agent: {next_step}")
         return next_step

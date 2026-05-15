@@ -54,8 +54,8 @@ class ReportAgent(BaseAgent):
         # 4. Save to artifacts
         state["artifacts"]["final_report"] = report_content
         
-        # 5. Route back to supervisor (who will then likely end the workflow)
-        state["next_step"] = "supervisor"
+        # 5. Route to Critic for verification
+        state["next_step"] = "critic"
         
         shared_memory.add_message(self.name, "Final report generated and stored in artifacts.")
         

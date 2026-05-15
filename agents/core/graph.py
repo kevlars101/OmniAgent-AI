@@ -5,11 +5,13 @@ import logging
 from langgraph.graph import END, StateGraph
 
 from agents.core.state import WorkflowState, create_initial_state
+from app.core.observability import obs_manager
 from agents.planning_agent import PlanningAgent
 from agents.supervisor_agent import SupervisorAgent
 from agents.research_agent import ResearchAgent
 from agents.coding_agent import CodingAgent
 from agents.report_agent import ReportAgent
+from agents.critic_agent import CriticAgent
 from agents.presentation_agent import PresentationAgent
 from agents.browser_agent import BrowserAgent
 
@@ -30,6 +32,7 @@ class VeyraGraph:
         self.builder.add_node("research", ResearchAgent())
         self.builder.add_node("coding", CodingAgent())
         self.builder.add_node("report", ReportAgent())
+        self.builder.add_node("critic", CriticAgent())
 
     def _register_edges(self):
         # 1. Entry point goes to planning
@@ -43,13 +46,14 @@ class VeyraGraph:
         self.builder.add_conditional_edges(
             "supervisor",
             router,
-            ["research", "coding", "report", "__end__"]
+            ["research", "coding", "report", "critic", "__end__"]
         )
         
         # 4. Workers always return to Supervisor for evaluation
         self.builder.add_edge("research", "supervisor")
         self.builder.add_edge("coding", "supervisor")
-        self.builder.add_edge("report", "supervisor")
+        self.builder.add_edge("report", "critic")
+        self.builder.add_edge("critic", "supervisor")
 
     async def run(
         self,
@@ -74,8 +78,17 @@ class VeyraGraph:
         if stream:
             return self.graph.astream(initial_state)
         
-        final_state = await self.graph.ainvoke(initial_state)
-        return final_state
+        # Start tracking
+        wf_id = initial_state["workflow_id"]
+        obs_manager.start_workflow(str(wf_id))
+        
+        try:
+            final_state = await self.graph.ainvoke(initial_state)
+            obs_manager.end_workflow(str(wf_id), status=final_state.get("status", "completed"))
+            return final_state
+        except Exception as e:
+            obs_manager.end_workflow(str(wf_id), status="failed")
+            raise
 
 # Main instance
 veyra_graph = VeyraGraph()

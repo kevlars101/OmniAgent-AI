@@ -3,10 +3,12 @@ from typing import Any, Dict, List, Optional
 import logging
 import google.generativeai as genai
 from tenacity import retry, stop_after_attempt, wait_exponential
+import time
 
 from agents.core.state import AgentName, WorkflowState, AgentFinding
 from agents.core.memory import shared_memory
 from app.core.config import settings
+from app.core.observability import obs_manager
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,7 @@ class BaseAgent(ABC):
         The entry point for LangGraph nodes.
         """
         logger.info(f"Agent {self.name} invoked (Iteration: {state['iteration_count']})")
+        start_time = time.time()
         try:
             # 1. Update active agent and iteration count
             state["active_agent"] = self.name
@@ -53,7 +56,11 @@ class BaseAgent(ABC):
             # 2. Run the agent logic
             updated_state = await self.run(state)
             
-            # 3. Finalize state
+            # 3. Record metrics
+            duration = time.time() - start_time
+            obs_manager.record_agent_time(str(state["workflow_id"]), self.name, duration)
+            
+            # 4. Finalize state
             return updated_state
         except Exception as e:
             logger.exception(f"Fatal error in agent {self.name}: {str(e)}")

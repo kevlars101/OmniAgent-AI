@@ -6,6 +6,7 @@ import redis.asyncio as redis
 from app.schemas.health import HealthResponse
 from app.db.session import get_session
 from app.core.config import settings
+from app.core.observability import obs_manager
 from rag.embeddings.factory import embedding_factory
 
 router = APIRouter()
@@ -56,3 +57,8 @@ async def health_vectorstore() -> HealthResponse:
         return HealthResponse(status="ok")
     except Exception as e:
         return HealthResponse(status=f"error: {str(e)}")
+
+@router.get("/metrics")
+async def get_metrics():
+    """Get aggregated platform performance metrics."""
+    return obs_manager.get_summary_metrics()
