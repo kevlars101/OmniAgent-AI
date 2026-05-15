@@ -11,11 +11,24 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/omniagent"
+    redis_url: str = "redis://localhost:6379/0"
+
+    # Authentication (Dev Placeholders)
+    auth_dev_user_id: str = "00000000-0000-0000-0000-000000000000"
+    auth_dev_email: str = "dev@omniagent.ai"
+
+    # File Uploads
+    upload_dir: str = "var/uploads"
+    max_upload_mb: int = 20
+
+    # Vector DB (Chroma)
+    chroma_db_dir: str = "var/chroma"
+    chroma_collection_name: str = "omniagent_knowledge"
 
     # LLM Settings (passed to LangGraph agents)
     OPENAI_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
 
-    model_config = SettingsConfigDict(case_sensitive=True, env_file=".env")
+    model_config = SettingsConfigDict(case_sensitive=False, env_file=".env", extra="ignore")
 
 settings = Settings()

@@ -5,6 +5,7 @@ import logging
 
 from rag.chunking.semantic_chunker import DocumentChunk
 from rag.embeddings.embedding_provider import EmbeddingProvider
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +14,9 @@ class ChromaVectorStore:
     Async wrapper for ChromaDB.
     Handles storing document chunks, embeddings, and rich metadata.
     """
-    def __init__(self, collection_name: str = "omniagent_knowledge", persist_directory: str = "./var/chroma"):
-        self.collection_name = collection_name
-        self.persist_directory = persist_directory
+    def __init__(self, collection_name: str | None = None, persist_directory: str | None = None):
+        self.collection_name = collection_name or settings.chroma_collection_name
+        self.persist_directory = persist_directory or settings.chroma_db_dir
         self._provider = EmbeddingProvider()
         
         # In production:

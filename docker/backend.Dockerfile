@@ -37,7 +37,7 @@ COPY rag/ /app/rag/
 ENV PYTHONPATH=/app/backend:/app
 
 # Create directories for persistent storage (Chroma, Uploads) and set permissions
-RUN mkdir -p /app/var/uploads /app/var/chroma && chown -R appuser:appgroup /app/var
+RUN mkdir -p /app/backend/var/uploads /app/backend/var/chroma && chown -R appuser:appgroup /app/backend/var
 
 USER appuser
 
