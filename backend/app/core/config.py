@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     chroma_db_dir: str = "var/chroma"
     chroma_collection_name: str = "omniagent_knowledge"
 
+    # Retrieval Settings
+    retrieval_top_k: int = 5
+    similarity_threshold: float = 0.3
+    max_context_chunks: int = 10
+
     # LLM Settings (passed to LangGraph agents)
     OPENAI_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
