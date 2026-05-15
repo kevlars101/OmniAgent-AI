@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 from agents.core.router import router
 
-class OmniAgentGraph:
+class VeyraGraph:
     def __init__(self):
         self.builder = StateGraph(WorkflowState)
         self._register_nodes()
@@ -78,4 +78,4 @@ class OmniAgentGraph:
         return final_state
 
 # Main instance
-omniagent_graph = OmniAgentGraph()
+veyra_graph = VeyraGraph()

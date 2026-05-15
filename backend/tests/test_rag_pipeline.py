@@ -11,7 +11,7 @@ async def test_full_rag_flow_mock_file(tmp_path):
     d = tmp_path / "test_docs"
     d.mkdir()
     f = d / "test.txt"
-    f.write_text("OmniAgent-AI is a powerful orchestration platform. It uses LangGraph and RAG.")
+    f.write_text("Veyra is a powerful orchestration platform. It uses LangGraph and RAG.")
     
     user_id = uuid4()
     doc_id = uuid4()
@@ -28,9 +28,9 @@ async def test_full_rag_flow_mock_file(tmp_path):
     vector_store = ChromaVectorStore()
     search_service = HybridSearchService(vector_store)
     
-    query = "What is OmniAgent-AI?"
+    query = "What is Veyra?"
     hits = await search_service.search(user_id=user_id, query=query)
     
     assert len(hits) > 0
-    assert "OmniAgent-AI" in hits[0]["text"]
+    assert "Veyra" in hits[0]["text"]
     assert hits[0]["score"] > 0.1

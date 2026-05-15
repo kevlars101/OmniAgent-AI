@@ -1,7 +1,7 @@
 import pytest
 import os
 from uuid import uuid4
-from agents.core.graph import omniagent_graph
+from agents.core.graph import veyra_graph
 
 @pytest.mark.asyncio
 async def test_agent_orchestration_flow():
@@ -16,7 +16,7 @@ async def test_agent_orchestration_flow():
     # In a real test, we might mock the LLM responses to avoid costs and variability
     # but for a production-grade infrastructure, we want to see it boot.
     try:
-        final_state = await omniagent_graph.run(
+        final_state = await veyra_graph.run(
             user_id=user_id,
             objective=objective,
             document_ids=[]

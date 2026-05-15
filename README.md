@@ -1,6 +1,6 @@
-# OmniAgent AI
+# Veyra
 
-OmniAgent AI is a full-stack advanced multi-agent orchestration platform. It enables you to orchestrate autonomous workflows, backed by a robust RAG (Retrieval-Augmented Generation) pipeline for document analysis and an Apple-inspired premium frontend UI.
+Veyra is a full-stack advanced multi-agent orchestration platform. It enables you to orchestrate autonomous workflows, backed by a robust RAG (Retrieval-Augmented Generation) pipeline for document analysis and an Apple-inspired premium frontend UI.
 
 ## Features
 
@@ -64,4 +64,4 @@ npm install
 npm run dev
 ```
 
-Visit http://localhost:3000 to access the OmniAgent AI Dashboard.
+Visit http://localhost:3000 to access the Veyra Dashboard.

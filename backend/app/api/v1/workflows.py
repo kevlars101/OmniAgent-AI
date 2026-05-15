@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
-from agents.core.graph import omniagent_graph
+from agents.core.graph import veyra_graph
 from agents.core.state import create_initial_state
 from agents.core.memory import workspace_memory
 from uuid import uuid4
@@ -46,7 +46,7 @@ async def websocket_endpoint(websocket: WebSocket):
         state = workspace_memory.hydrate(state)
         
         # Stream events using langgraph v2 streaming
-        async for event in omniagent_graph.graph.astream_events(state, version="v2"):
+        async for event in veyra_graph.graph.astream_events(state, version="v2"):
             # We serialize state output properly, skipping complex objects if needed
             # For logging purposes we just need name and event type
             await websocket.send_json({

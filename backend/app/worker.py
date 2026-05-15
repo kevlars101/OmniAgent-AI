@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Setup Celery Application
 celery_app = Celery(
-    "omniagent_worker",
+    "veyra_worker",
     broker=settings.redis_url,
     backend=settings.redis_url,
 )

@@ -15,7 +15,7 @@ class PlanResponse(BaseModel):
     tasks: List[AgentTask] = Field(description="A list of discrete tasks for specialized agents")
 
 PLANNING_PROMPT = """
-You are the Lead OmniAgent Architect. Your job is to analyze the user's objective and break it down into a sequence of tasks for specialized agents.
+You are the Lead Veyra Architect. Your job is to analyze the user's objective and break it down into a sequence of tasks for specialized agents.
 
 Objective: {objective}
 

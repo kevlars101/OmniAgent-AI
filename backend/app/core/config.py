@@ -3,19 +3,19 @@ from pydantic import PostgresDsn, AnyHttpUrl
 from typing import List
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "OmniAgentAI Backend"
+    PROJECT_NAME: str = "Veyra Backend"
     API_V1_STR: str = "/api/v1"
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]  # Configurable in prod
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/omniagent"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/veyra"
     redis_url: str = "redis://localhost:6379/0"
 
     # Authentication (Dev Placeholders)
     auth_dev_user_id: str = "00000000-0000-0000-0000-000000000000"
-    auth_dev_email: str = "dev@omniagent.ai"
+    auth_dev_email: str = "dev@veyra.ai"
 
     # File Uploads
     upload_dir: str = "var/uploads"
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # Vector DB (Chroma)
     chroma_db_dir: str = "var/chroma"
-    chroma_collection_name: str = "omniagent_knowledge"
+    chroma_collection_name: str = "veyra_knowledge"
 
     # Retrieval Settings
     retrieval_top_k: int = 5

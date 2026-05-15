@@ -1,4 +1,4 @@
-# OmniAgent AI Project Instructions
+# Veyra Project Instructions
 
 This project is an AI-powered orchestration platform. Use the following guidelines when working in this codebase.
 

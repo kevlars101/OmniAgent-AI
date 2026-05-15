@@ -12,10 +12,10 @@ from app.db.models import Workflow, WorkflowStatusEnum
 # To ensure the backend can import the agents correctly if they are in the parent directory:
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 try:
-    from agents import omniagent_graph
+    from agents import veyra_graph
 except ImportError:
     # Fallback if running from a different root
-    omniagent_graph = None
+    veyra_graph = None
 
 class WorkflowService:
     @staticmethod
@@ -39,9 +39,9 @@ class WorkflowService:
         workflow.status = WorkflowStatusEnum.running
         await db.commit()
         
-        if omniagent_graph:
+        if veyra_graph:
             # Run LangGraph Agent Layer
-            final_state = await omniagent_graph.run(
+            final_state = await veyra_graph.run(
                 user_id=workflow.user_id,
                 objective=workflow.objective,
                 workflow_id=workflow.id,
@@ -66,7 +66,7 @@ class WorkflowService:
     async def stream_workflow(websocket: WebSocket, workflow_id: UUID, user_id: UUID):
         await websocket.accept()
         
-        if not omniagent_graph:
+        if not veyra_graph:
             await websocket.send_json({"error": "LangGraph agents not loaded"})
             await websocket.close()
             return
@@ -79,7 +79,7 @@ class WorkflowService:
             # Assuming we got it somehow:
             objective = "Real-time query..." # Mocked for ws
             
-            async for state_chunk in await omniagent_graph.run(
+            async for state_chunk in await veyra_graph.run(
                 user_id=user_id,
                 objective=objective,
                 workflow_id=workflow_id,
