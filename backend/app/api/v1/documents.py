@@ -1,4 +1,5 @@
 from uuid import UUID
+from typing import Optional
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +15,7 @@ router = APIRouter()
 @router.post("/ingest", response_model=DocumentIngestResponse, status_code=status.HTTP_202_ACCEPTED)
 async def ingest_document(
     file: UploadFile = File(...),
-    conversation_id: UUID | None = None,
+    conversation_id: Optional[UUID] = None,
     principal: Principal = Depends(require_principal),
     session: AsyncSession = Depends(get_session),
 ) -> DocumentIngestResponse:

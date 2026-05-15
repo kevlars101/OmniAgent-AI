@@ -19,7 +19,7 @@ class DocumentSearchTool:
     def __init__(self) -> None:
         self.search_service = HybridSearchService(ChromaVectorStore())
 
-    async def ainvoke(self, user_id: UUID, query: str, document_ids: List[UUID] | None = None, limit: int = 5) -> List[Dict[str, Any]]:
+    async def ainvoke(self, user_id: UUID, query: str, document_ids: Optional[List[UUID]] = None, limit: int = 5) -> List[Dict[str, Any]]:
         """
         Executes the search.
         """

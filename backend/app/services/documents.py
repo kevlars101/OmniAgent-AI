@@ -2,6 +2,7 @@ import hashlib
 import logging
 from pathlib import Path
 from uuid import UUID, uuid4
+from typing import Optional
 
 from fastapi import UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,14 +18,14 @@ from rag.store.chroma import ChromaVectorStore
 logger = logging.getLogger(__name__)
 
 class DocumentService:
-    def __init__(self, session: AsyncSession | None = None):
+    def __init__(self, session: Optional[AsyncSession] = None):
         self.session = session
 
     async def ingest_upload(
         self,
         file: UploadFile,
         user_id: UUID,
-        conversation_id: UUID | None,
+        conversation_id: Optional[UUID],
     ) -> DocumentIngestResponse:
         """
         Handles document upload, persistence, and enqueues background processing.
@@ -39,8 +40,8 @@ class DocumentService:
             raise AppError(f"File exceeds {settings.max_upload_mb} MB limit.", status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
         suffix = Path(file.filename or "").suffix.lower()
-        if suffix not in {".pdf", ".docx"}:
-            raise AppError("Only PDF and DOCX files are supported.")
+        if suffix not in {".pdf", ".docx", ".txt"}:
+            raise AppError("Only PDF, DOCX and TXT files are supported.")
 
         checksum = hashlib.sha256(payload).hexdigest()
         storage_path = self._persist_upload(payload, suffix)

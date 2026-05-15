@@ -1,4 +1,4 @@
-from typing import Any, AsyncGenerator, Literal, List, Union
+from typing import Any, AsyncGenerator, Literal, List, Union, Optional
 from uuid import UUID, uuid4
 import logging
 
@@ -12,8 +12,8 @@ from agents.research_agent import ResearchAgent
 from agents.coding_agent import CodingAgent
 from agents.report_agent import ReportAgent
 from agents.critic_agent import CriticAgent
-from agents.presentation_agent import PresentationAgent
-from agents.browser_agent import BrowserAgent
+# from agents.presentation_agent import PresentationAgent
+# from agents.browser_agent import BrowserAgent
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +59,11 @@ class VeyraGraph:
         self,
         user_id: UUID,
         objective: str,
-        conversation_id: UUID | None = None,
-        workflow_id: UUID | None = None,
-        document_ids: List[UUID] | None = None,
+        conversation_id: Optional[UUID] = None,
+        workflow_id: Optional[UUID] = None,
+        document_ids: Optional[List[UUID]] = None,
         stream: bool = False
-    ) -> WorkflowState | AsyncGenerator[dict, Any]:
+    ) -> Union[WorkflowState, AsyncGenerator[dict, Any]]:
         """
         Executes the workflow with optional streaming.
         """

@@ -19,7 +19,7 @@ class BaseAgent(ABC):
     """
     name: AgentName
 
-    def __init__(self, model_name: str = "models/gemini-2.0-flash", tools: List[Any] | None = None):
+    def __init__(self, model_name: str = "models/gemini-2.0-flash", tools: Optional[List[Any]] = None):
         self.model_name = model_name
         self.tools = tools or []
         
@@ -78,7 +78,7 @@ class BaseAgent(ABC):
         wait=wait_exponential(multiplier=1, min=4, max=10),
         reraise=True
     )
-    async def think(self, prompt: str, state: WorkflowState, tools: List[str] | None = None) -> Any:
+    async def think(self, prompt: str, state: WorkflowState, tools: Optional[List[str]] = None) -> Any:
         """
         Executes a reasoning loop using the LLM.
         Supports tool calling and structured output.

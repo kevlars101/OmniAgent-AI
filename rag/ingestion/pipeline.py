@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from uuid import UUID
 import logging
 
@@ -16,7 +16,7 @@ class RAGPipeline:
     Orchestrates the entire ingestion flow: Loading -> Chunking -> Embedding -> Storage.
     Includes failure recovery logic and performance metrics.
     """
-    def __init__(self, vector_store: ChromaVectorStore | None = None):
+    def __init__(self, vector_store: Optional[ChromaVectorStore] = None):
         self.pdf_loader = PDFLoader()
         self.docx_loader = DocxLoader()
         self.chunker = SemanticChunker(chunk_size=1000, chunk_overlap=150)

@@ -10,6 +10,7 @@ from app.core.observability import obs_manager
 logger = logging.getLogger(__name__)
 
 class VerificationResult(BaseModel):
+    chain_of_thought: str = Field(description="Step-by-step reasoning for the audit")
     hallucination_score: float = Field(description="Score from 0 to 1, where 1 means high hallucination", ge=0, le=1)
     citation_accuracy: float = Field(description="Score from 0 to 1, where 1 means all citations are accurate", ge=0, le=1)
     reasoning_quality: float = Field(description="Score from 0 to 1, where 1 means high reasoning quality", ge=0, le=1)
@@ -29,6 +30,12 @@ Research Findings:
 Technical Report to Verify:
 {report}
 
+Verification Protocol:
+1. PHASE 1: Fact Extraction - List all technical claims made in the report.
+2. PHASE 2: Grounding - For each claim, find the specific research finding that supports it.
+3. PHASE 3: Contradiction Check - Identify any report content that conflicts with research findings.
+4. PHASE 4: Scoring - Assign scores based on the evidence gathered.
+
 Verification Criteria:
 1. Hallucination Detection: Are there any claims made that are not supported by the findings?
 2. Citation Grounding: Are the citations used correctly and do they point to the right facts?
@@ -37,6 +44,7 @@ Verification Criteria:
 
 Return your verification in structured JSON format following this schema:
 {{
+  "chain_of_thought": "Your step-by-step reasoning through the 4 phases...",
   "hallucination_score": 0.0,
   "citation_accuracy": 1.0,
   "reasoning_quality": 0.9,

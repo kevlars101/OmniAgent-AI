@@ -15,7 +15,7 @@ class ChromaVectorStore:
     Production-grade wrapper for ChromaDB.
     Handles persistent storage, batch upserts, and semantic search.
     """
-    def __init__(self, collection_name: str | None = None, persist_directory: str | None = None):
+    def __init__(self, collection_name: Optional[str] = None, persist_directory: Optional[str] = None):
         self.collection_name = collection_name or settings.chroma_collection_name
         self.persist_directory = persist_directory or settings.chroma_db_dir
         
@@ -23,8 +23,6 @@ class ChromaVectorStore:
         self.client = chromadb.PersistentClient(path=self.persist_directory)
         
         # Get or create collection
-        # We don't pass an embedding function here because we handle embeddings manually 
-        # via our Provider Abstraction for better control (retries, batching).
         self.collection = self.client.get_or_create_collection(
             name=self.collection_name,
             metadata={"hnsw:space": "cosine"}

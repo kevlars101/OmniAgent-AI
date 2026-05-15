@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import PostgresDsn, AnyHttpUrl
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Veyra Backend"
@@ -30,9 +30,9 @@ class Settings(BaseSettings):
     similarity_threshold: float = 0.3
     max_context_chunks: int = 10
 
-    # LLM Settings (passed to LangGraph agents)
-    OPENAI_API_KEY: str | None = None
-    GEMINI_API_KEY: str | None = None
+    # LLM Settings
+    openai_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
 
     model_config = SettingsConfigDict(case_sensitive=False, env_file=".env", extra="ignore")
 

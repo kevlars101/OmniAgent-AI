@@ -25,19 +25,21 @@ Available Agents:
 - report: Technical synthesis, structured documentation, and final report generation.
 
 Guidelines:
-1. Break the objective into 2-4 discrete tasks.
-2. Ensure tasks are logically ordered (e.g., research before report).
-3. Be specific about the objective for each task.
+1. Break the objective into 3-5 discrete, actionable tasks.
+2. Every plan MUST start with 'research' if document context is required.
+3. Every plan MUST end with 'report' to synthesize the final output.
+4. Ensure tasks are logically ordered with clear dependencies.
+5. Be extremely specific about the 'objective' for each task. Avoid generic descriptions.
 
 Return your response in structured JSON format following this schema:
 {{
-  "rationale": "Why this plan was chosen...",
+  "rationale": "Detailed explanation of the architectural approach and task sequencing",
   "tasks": [
     {{
       "id": "task_1",
       "agent": "research",
-      "title": "...",
-      "objective": "...",
+      "title": "Initial Fact Gathering",
+      "objective": "Retrieve specific technical details regarding...",
       "depends_on": []
     }}
   ]

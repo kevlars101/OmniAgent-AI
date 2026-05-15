@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 from agents.core.graph import veyra_graph
 from agents.core.state import create_initial_state
-from agents.core.memory import workspace_memory
+from agents.core.memory import shared_memory
 from uuid import uuid4
 from app.core.config import settings
 
@@ -43,7 +43,6 @@ async def websocket_endpoint(websocket: WebSocket):
             objective=objective,
             document_ids=document_ids,
         )
-        state = workspace_memory.hydrate(state)
         
         # Stream events using langgraph v2 streaming
         async for event in veyra_graph.graph.astream_events(state, version="v2"):

@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from collections import defaultdict
 from dataclasses import dataclass, field, asdict
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class WorkflowMetrics:
     workflow_id: str
     start_time: float
-    end_time: float | None = None
+    end_time: Optional[float] = None
     duration: float = 0.0
     token_usage: int = 0
     iteration_count: int = 0
