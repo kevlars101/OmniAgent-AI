@@ -15,28 +15,7 @@ from agents.browser_agent import BrowserAgent
 
 logger = logging.getLogger(__name__)
 
-def router(state: WorkflowState) -> Union[List[str], str]:
-    """
-    Conditional router that determines the next agent(s) to execute.
-    Supports fan-out (returning a list of nodes for parallel execution).
-    """
-    next_step = state.get("next_step")
-    
-    if state.get("status") == "failed":
-        logger.error(f"Workflow failed: {state.get('errors')}")
-        return "__end__"
-        
-    if not next_step:
-        return "__end__"
-        
-    # If it's a list, we return it to execute branches in parallel
-    if isinstance(next_step, list):
-        return next_step
-        
-    if next_step == "__end__":
-        return "__end__"
-    
-    return next_step
+from agents.core.router import router
 
 class OmniAgentGraph:
     def __init__(self):
@@ -49,31 +28,28 @@ class OmniAgentGraph:
         self.builder.add_node("planning", PlanningAgent())
         self.builder.add_node("supervisor", SupervisorAgent())
         self.builder.add_node("research", ResearchAgent())
-        self.builder.add_node("browser", BrowserAgent())
         self.builder.add_node("coding", CodingAgent())
         self.builder.add_node("report", ReportAgent())
-        self.builder.add_node("presentation", PresentationAgent())
 
     def _register_edges(self):
         # 1. Entry point goes to planning
         self.builder.set_entry_point("planning")
         
-        # 2. Planning delegates initial control to Supervisor
+        # 2. Sequential nodes
         self.builder.add_edge("planning", "supervisor")
         
-        # 3. Supervisor -> Router (Fan-out to parallel agents or END)
+        # 3. Dynamic routing from Supervisor
+        # The router will determine which worker to run next or to END
         self.builder.add_conditional_edges(
             "supervisor",
             router,
-            ["research", "browser", "coding", "report", "presentation", "__end__"]
+            ["research", "coding", "report", "__end__"]
         )
         
-        # 4. Parallel workers fan-in back to Supervisor for evaluation
+        # 4. Workers always return to Supervisor for evaluation
         self.builder.add_edge("research", "supervisor")
-        self.builder.add_edge("browser", "supervisor")
         self.builder.add_edge("coding", "supervisor")
         self.builder.add_edge("report", "supervisor")
-        self.builder.add_edge("presentation", "supervisor")
 
     async def run(
         self,
