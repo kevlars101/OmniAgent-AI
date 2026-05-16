@@ -5,7 +5,7 @@ from app.core.config import settings
 # Database Engine Configuration
 # Standardizing on a single engine instance with optimized pooling
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://").replace("postgres://", "postgresql+asyncpg://"),
     echo=False,
     future=True,
     pool_size=settings.max_overflow if hasattr(settings, 'max_overflow') else 5,
