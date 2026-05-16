@@ -23,7 +23,7 @@ async def run_workflow(
     request: WorkflowRunRequest,
     current_user: UserPrincipal = Depends(get_current_user),
 ) -> WorkflowRunResponse:
-    return await WorkflowService().run(user_id=principal.user_id, request=request)
+    return await WorkflowService().run(user_id=current_user.user_id, request=request)
 
 
 @router.websocket("/ws")
@@ -40,13 +40,13 @@ async def websocket_endpoint(
     await websocket.accept()
     
     # 1. Auth check
+    if not token:
+        await websocket.close(code=4001)
+        return
     try:
-        # For simplicity in this demo, we use a basic check. In prod, use verify_token(token).
-        if not token and settings.auth_dev_user_id == "00000000-0000-0000-0000-000000000000":
-            user_id = UUID(settings.auth_dev_user_id)
-        else:
-            # Placeholder for real JWT validation
-            user_id = UUID(settings.auth_dev_user_id)
+        from app.core.security import clerk_auth
+        user_principal = await clerk_auth.verify_token(token)
+        user_id = UUID(user_principal.user_id)
     except Exception:
         await websocket.close(code=4001)
         return
