@@ -10,7 +10,8 @@ from agents.core.memory import shared_memory
 from uuid import uuid4
 from app.core.config import settings
 
-from app.core.security import Principal, require_principal
+from app.api.deps import get_current_user
+from app.core.security import UserPrincipal
 from app.schemas.workflows import WorkflowRunRequest, WorkflowRunResponse
 from app.services.workflows import WorkflowService
 
@@ -20,7 +21,7 @@ router = APIRouter()
 @router.post("/run", response_model=WorkflowRunResponse)
 async def run_workflow(
     request: WorkflowRunRequest,
-    principal: Principal = Depends(require_principal),
+    current_user: UserPrincipal = Depends(get_current_user),
 ) -> WorkflowRunResponse:
     return await WorkflowService().run(user_id=principal.user_id, request=request)
 

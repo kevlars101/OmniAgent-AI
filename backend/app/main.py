@@ -19,7 +19,7 @@ async def verify_infrastructure():
     # 1. Database (PostgreSQL)
     try:
         async with engine.begin() as conn:
-            await conn.execute("SELECT 1")
+            from sqlalchemy import text; await conn.execute(text("SELECT 1"))
         logger.info("PostgreSQL connectivity verified.")
     except Exception as e:
         logger.error(f"PostgreSQL connection failed: {e}")
@@ -57,9 +57,7 @@ async def lifespan(app: FastAPI):
     # Run diagnostics
     await verify_infrastructure()
     
-    # Initialize database tables (In prod, use Alembic migrations instead)
-    async with engine.begin() as conn:
-        
+    # Database tables managed by Alembic migrations
     yield
     
     # Teardown logic
